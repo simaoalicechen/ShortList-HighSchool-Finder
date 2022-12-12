@@ -19,7 +19,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["email", "username", "password"]
+        fields = ["email", "username", "password", "preferences"]
 
     def validate(self, attrs):
         username = attrs.get("username", "")
@@ -29,7 +29,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
+        preferences = validated_data["preferences"]
+        del validated_data["preferences"]
+        user = User.objects.create_user(**validated_data)
+        User.objects.filter(pk=user.id).update(preferences=preferences)  # 481
+        user = User.objects.get(pk=user.id)
+        return user
 
 
 class EmailVerificationSerializer(serializers.ModelSerializer):
@@ -98,6 +103,13 @@ class ResetPasswordEmailRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(min_length=2)
 
     redirect_url = serializers.CharField(max_length=500, required=False)
+
+    class Meta:
+        fields = ["email"]
+
+
+class SendInviteSerializer(serializers.Serializer):
+    email = serializers.EmailField(min_length=2)
 
     class Meta:
         fields = ["email"]

@@ -6,8 +6,8 @@ import ModalFullScreen from "../components/layout/ModalFullScreen.vue";
 import SchoolCard from "../components/school/SchoolCard.vue";
 import { dragStateStore } from "../states/categorizeDragAndDrop";
 import ShortlistApi from "../api/shortlist";
-import { shortLists } from "../api/examples/shortlists.js";
 import cookie from "@/helpers/cookie.js";
+import axios from "axios";
 
 const shortlistApi = new ShortlistApi("https://api.shortlist.nyc/");
 
@@ -32,7 +32,6 @@ export default {
     },
   },
   methods: {
-    /* eslint-disable */
     markSchoolAsAccepted(recoID) {
       this.$emit("markSchoolAsAccepted", {
         recoID: recoID,
@@ -42,10 +41,52 @@ export default {
     markSchoolAsTrashed(recoID) {
       this.$emit("markSchoolAsTrashed", {
         recoID: recoID,
-        Trashed: true,
+        trashed: true,
       });
     },
-    /* eslint-disable */
+    successGet(responseData) {
+      this.myShortlists = responseData;
+    },
+    calculateSaveEndpoint(listIndex) {
+      let listID = this.myShortlists[listIndex].shortlist_id;
+      return (
+        "http://shortlist-api-361033341.us-east-1.elb.amazonaws.com/shortlists/" +
+        listID +
+        "/"
+      );
+    },
+    getLists() {
+      axios
+        .post("https://api.shortlist.nyc/shortlists/all", {
+          user_id: this.acctID,
+        })
+        .then((response) => this.successGet(response.data))
+        .catch(function (error) {
+          console.log(error.response);
+        });
+    },
+    saveList(listIndex) {
+      let listSchools = this.myShortlists[listIndex].schools;
+      // console.log("list id is: ", this.myShortlists[listIndex].shortlist_id);
+      let schoolList = [];
+      for (let i = 0; i < listSchools.length; i++) {
+        schoolList.push(listSchools[i].schoolMetadata.id);
+      }
+      let payload = {
+        user_id: this.acctID,
+        school_ids: schoolList,
+        shortlist_name: this.myShortlists[listIndex].shortlist_name,
+        settings: this.myShortlists[listIndex].settings,
+      };
+      axios
+        .post(this.calculateSaveEndpoint(listIndex), payload)
+        .then(function (response) {
+          console.log(response);
+        })
+        .catch(function (error) {
+          console.log(error.response.data);
+        });
+    },
     swapListElements(inList, idx1, idx2) {
       inList[idx2] = inList.splice(idx1, 1, inList[idx2])[0];
       /*
@@ -56,8 +97,11 @@ export default {
     },
     showSchoolModal(e) {
       this.schoolDetailModalVisible = true;
-      this.schoolDetailModalData =
-        this.myShortlists[e.listIdx].schools[e.schoolIdx];
+      this.schoolDetailModalData = {
+        listIdx: e.listIdx,
+        schoolIdx: e.schoolIdx,
+        data: this.myShortlists[e.listIdx].schools[e.schoolIdx],
+      };
     },
     dragDropOver() {
       if (this.dragState.dragType == "reorderList") {
@@ -121,20 +165,23 @@ export default {
         if (this.dragState.categorizeState.activeDrop) {
           let listIdx = this.dragState.categorizeState.schoolOverListIdx;
           if (listIdx == -1) {
-            // trash it;
+            // set current_trashed in db
             this.markSchoolAsTrashed(this.myRecommendations[0].id);
             this.removeTopCard();
             console.log("DELETE school");
-            // TODO set current_trashed in db
           } else {
             // assign it;
-            console.log("ASSIGN SCHOOL");
             if (this.myShortlists[listIdx].schools.length < 4) {
+              console.log("ASSIGN SCHOOL");
               this.myShortlists[listIdx].schools.push(
-                this.dragState.categorizeState.schoolData
+                this.dragState.categorizeState.schoolData.school
               );
+              // set current_accepted in db
               this.markSchoolAsAccepted(this.myRecommendations[0].id);
               this.removeTopCard();
+              // console.log("listIDX is: ", listIdx);
+              // console.log("save schools are: ", this.myShortlists[listIdx].schools);
+              this.saveList(listIdx);
             } else {
               alert("List is full");
             }
@@ -151,21 +198,32 @@ export default {
       this.myShortlists[e.listId].settings = JSON.parse(
         JSON.stringify(e.settings)
       );
-      // TODO: send update to api
-      console.log("SEND UPDATE SETTINGS:", e.settings);
+      // send update to api
+      // console.log("SEND UPDATE SETTINGS:", e.settings);
+      this.saveList(e.listId);
     },
     shareList(e) {
       console.log("SHARED LIST #:", e);
     },
+    deleteFromList() {
+      // console.log("DELETE FROM LIST: ", this.schoolDetailModalData.data.schoolMetadata.id);
+      let schoolIdx = this.schoolDetailModalData.schoolIdx;
+      let listIdx = this.schoolDetailModalData.listIdx;
+      this.myShortlists[listIdx].school_ids.splice(schoolIdx, 1);
+      this.myShortlists[listIdx].schools.splice(schoolIdx, 1);
+      this.saveList(listIdx);
+
+      // reset modal data
+      this.schoolDetailModalVisible = false;
+      this.schoolDetailModalData = null;
+    },
     getRecommendations(count = 10) {
-      console.log("payload:", this.acctID);
       let req = shortlistApi
         .getRecommendations()
         .forAccountId(this.acctID)
         .count(count)
         .strategy("RANKING")
         .onSuccess((result) => {
-          console.log("categorize recs: ", Array.isArray(result.data));
           this.myRecommendations.push(...result.data);
         })
         .onFail((err) => {
@@ -176,7 +234,7 @@ export default {
     },
   },
   data() {
-    let myShortlists = shortLists;
+    let myShortlists = [];
     let myRecommendations = []; // recommendations;
     let schoolDetailModalVisible = false;
     let schoolDetailModalData = null;
@@ -198,6 +256,7 @@ export default {
   },
   created() {
     this.getRecommendations(50);
+    this.getLists();
   },
 };
 </script>
@@ -216,15 +275,14 @@ export default {
           margin-bottom: 20px;
         "
       >
-        Discard?
+        <button @click="deleteFromList()">Discard?</button>
       </div>
       <SchoolCard
         v-if="schoolDetailModalData"
-        :schoolData="schoolDetailModalData"
+        :schoolData="schoolDetailModalData.data"
       />
     </div>
   </ModalFullScreen>
-
   <div
     class="categorize-view-container"
     @dragover="dragDropOver"
@@ -252,26 +310,24 @@ export default {
 
 <style scoped>
 .categorize-view-container {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   display: flex;
-  align-items: center;
   justify-content: center;
   padding-top: 25px;
+  position: relative;
 }
 .categorize-view-trash-column {
   width: 150px;
   height: 100%;
   display: flex;
+  padding-top: 200px;
   justify-content: center;
   align-items: center;
 }
 .categorize-view-recommendation-column {
   min-width: 550px;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  height: 100px;
 }
 
 .categorize-view-shortlist-column {

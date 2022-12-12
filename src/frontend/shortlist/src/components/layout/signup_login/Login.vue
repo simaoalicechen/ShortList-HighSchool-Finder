@@ -24,10 +24,11 @@ export default {
     validatePassword() {
       return this.form.password.length > 6 && this.form.password.length < 20;
     },
-    submitLoginForm() {
+    submitLoginForm(redirect) {
       this.$emit("appAccountLogin", {
         email: this.form.email.trim(),
         password: this.form.password,
+        redirect: redirect || "",
       });
     },
   },
@@ -47,6 +48,25 @@ export default {
       accountMetadata: "accountMetadata",
     }),
   },
+  mounted() {
+    if (this.$route) {
+      let params = this.$route.query;
+      this.pwChanged = params.pwChanged;
+      this.firstTime = params.firstTime;
+      this.firstTimeSignup = params.firstTimeSignup;
+      if (this.pwChanged == "true") {
+        alert("Your password has been changed. Please log in again.");
+        this.pwChanged = "false";
+      }
+      if (this.firstTime == "true") {
+        alert("Please go to your profile and update your preference!");
+        this.firstTime = "false";
+      } else if (this.firstTimeSignup == "true") {
+        alert("Please check your email and verify your account!");
+        this.firstTimeSignup = "false";
+      }
+    }
+  },
 };
 </script>
 
@@ -61,7 +81,7 @@ export default {
     <form>
       <div id="emailaddress_login">
         <input
-          id="loginButtonTest"
+          id="loginEmailField"
           type="email"
           class="logininput"
           placeholder="Email"
@@ -79,7 +99,7 @@ export default {
       </div>
       <div id="password_login">
         <input
-          id="loginButtonTest"
+          id="loginPasswordField"
           type="password"
           name="password"
           v-model="this.form.password"
@@ -103,22 +123,20 @@ export default {
           type="button"
           class="btn btn-outline-dark"
           :disabled="isLoginDisabled"
-          @click="submitLoginForm"
+          @click="submitLoginForm(this.$route.query.redirect)"
         >
           Login
         </button>
-        <!-- TODO: Forgot password feature -->
-        <p class="instructions" id="small">or</p>
-        <button @click.prevent="loginWithSSO" class="btn btn-outline-dark">
-          Log In with Google
-        </button>
         <p class="instructions" id="small">Don't have an account yet?</p>
         <button
-          @click="$router.replace('/signup')"
+          @click.prevent="$router.replace('/signup')"
           class="btn btn-outline-dark"
         >
           Sign me up!
         </button>
+        <router-link to="/forgetPassword" class="nav-item nav-link">
+          <p class="instructions" id="small">Forget Password?</p>
+        </router-link>
       </div>
     </form>
   </div>

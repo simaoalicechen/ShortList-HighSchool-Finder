@@ -24,7 +24,7 @@ export default {
       </div>
       <!-- New school data format -->
       <div v-else>
-        {{ schoolData.school.schoolMetadata.name }}
+        {{ schoolData.schoolMetadata.name }}
       </div>
     </div>
   </div>
@@ -35,10 +35,9 @@ export default {
   border-radius: 10px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 5px 5px;
   user-select: none;
-  margin: 10px;
+  margin: 5px;
 }
 .school-icon-img {
   width: 30px;
@@ -48,7 +47,7 @@ export default {
   background-color: white;
 }
 .school-icon-name {
-  width: 60px;
+  width: 70px;
   font-size: 8px;
   margin-left: 10px;
 }

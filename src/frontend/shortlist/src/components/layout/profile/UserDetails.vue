@@ -1,56 +1,100 @@
 <script>
+import axios from "axios";
 export default {
   props: ["accountMetadata"],
-  emits: ["appAccountUpdateName"],
+  emits: ["appAccountUpdateName", "appRequestResetEmail"],
   data() {
     return {
       newFirst: "",
       newLast: "",
       nameAlert: "",
+      email: "",
+      validationresult: false,
       validation: true,
+      pwResetSent: false,
     };
   },
   methods: {
     validateName(value) {
-      let validNamePattern = new RegExp("^[a-zA-Z]+(?:[-'\\s][a-zA-Z]+)*$");
-      if (value.length < 2) {
-        this.nameAlert = "Minimum length is 2 for name!";
-        return false;
+      if (this.validation) {
+        let validNamePattern = new RegExp("^[a-zA-Z0-9]*$");
+        if (value.length < 2) {
+          this.nameAlert = "Minimum length is 2 for name!";
+          return false;
+        }
+        if (value.length > 10) {
+          this.nameAlert = "Maximum length is 10 for name!";
+          return false;
+        }
+        if (!validNamePattern.test(value)) {
+          this.nameAlert = "Valid name only contain letters or numbers!";
+          return false;
+        }
+        this.validationresult = true;
+        return true;
+      } else {
+        this.validationresult = true;
+        return true;
       }
-      if (value.length > 10) {
-        this.nameAlert = "Maximum length is 10 for name!";
-        return false;
-      }
-      if (!validNamePattern.test(value)) {
-        this.nameAlert =
-          "Valid name only contain letters, dashes (-) and spaces (No starting spaces)!";
-        return false;
-      }
-      return true;
     },
-
     loadFile: function (event) {
       var image = document.getElementById("output");
       image.src = URL.createObjectURL(event.target.files[0]);
       console.log(image.src);
     },
     updateName() {
-      let userFirst = this.newFirst
-        ? this.newFirst
-        : this.accountMetadata.preferences.userFirstName;
-      let userLast = this.newLast
-        ? this.newLast
-        : this.accountMetadata.preferences.userLastName;
+      if (this.validationresult == true) {
+        let userFirst = this.newFirst
+          ? this.newFirst
+          : this.accountMetadata.preferences.userFirstName;
+        let userLast = this.newLast
+          ? this.newLast
+          : this.accountMetadata.preferences.userLastName;
 
-      this.$emit("appAccountUpdateName", { userFirst, userLast });
+        this.$emit("appAccountUpdateName", { userFirst, userLast });
 
-      // reset name fields
-      this.newFirst = "";
-      this.newLast = "";
+        // reset name fields
+        this.newFirst = "";
+        this.newLast = "";
 
-      alert("Name updated!");
+        alert("Name updated!");
+      }
+    },
+    validateEmail(email) {
+      let emailPattern = new RegExp(
+        "^\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*(\\.\\w{2,3})+$"
+      );
+      return emailPattern.test(email);
+    },
+    enterEmail() {
+      var email = prompt("Enter your email here:");
+      if (this.validateEmail(email)) {
+        alert(
+          "Thank you, your password reset link has been sent. Please check your email."
+        );
+        return email;
+      } else {
+        alert("You didn't enter a valid email, try again.");
+      }
+    },
+    successGet(responseData) {
+      console.log("get reset email function running");
+      console.log(responseData, "This is responseData from successGet");
+      console.log("my list looks like: ");
+    },
+    appRequestResetEmail() {
+      const emailInput = this.enterEmail();
+      axios
+        .post("https://api.shortlist.nyc/auth/request-reset-email", {
+          email: emailInput,
+        })
+        .then((email) => this.successGet(email))
+        .catch(function (error) {
+          console.log(error.response);
+        });
     },
   },
+
   computed: {
     isUpdateDisabled() {
       if (!this.validation) {
@@ -67,28 +111,26 @@ export default {
 <template>
   <main>
     <form class="profileform">
-      <div class="image-upload">
+      <div style="padding-top: 20px">
         <img
-          src="/default-parent-profile.png"
+          src="/helloInShortlist.png"
           alt="Profile-Picture"
           id="profileimg"
           class="profileimg"
         />
-        <label for="file-input"><img src="/edit.png" /></label>
-
-        <input id="file-input" type="file" />
-      </div>
-
-      <div class="inputs">
-        <div class="accountstatus">
-          <label class="typestatuslabel">Account Type:</label>&nbsp;<button
-            class="parenttype"
-            title="After verification,You can send invite for Student account registration!"
-            disabled
-          >
-            PARENT / GUARDIAN
-          </button>
+        <div>
+          <div style="padding-left: 20px">
+            <label
+              class="displayName"
+              v-if="this.accountMetadata.preferences.userFirstName.length > 0"
+              >{{ this.accountMetadata.preferences.userFirstName }}
+              {{ this.accountMetadata.preferences.userLastName }}</label
+            >
+            <label v-else>Set Name</label>
+          </div>
         </div>
+      </div>
+      <div style="width: 250px; padding-top: 20px">
         <div class="accountstatus">
           <label class="typestatuslabel">ID Status:</label>&nbsp;<button
             class="verifiedstatus"
@@ -106,7 +148,16 @@ export default {
             {{ accountMetadata.email }}
           </label>
         </div>
+        <button
+          type="button"
+          class="btn btn-outline-dark btn-sm"
+          @click.prevent="appRequestResetEmail"
+        >
+          Reset Password
+        </button>
+      </div>
 
+      <div class="inputs">
         <label>First Name</label>
         <input
           type="text"
@@ -142,29 +193,34 @@ export default {
         <div class="input-errors" v-else>
           <div class="error-msg">&nbsp;</div>
         </div>
-
-        <button
-          class="pref-actions"
-          @click="updateName"
-          :disabled="isUpdateDisabled"
-        >
-          Update Changes
-        </button>
+        <div>
+          <button
+            class="pref-actions"
+            @click="updateName"
+            :disabled="isUpdateDisabled"
+          >
+            Update Changes
+          </button>
+          <div>
+            <label style="font-size: 10px"
+              >Edit First Name and Last Name both to Update.</label
+            >
+          </div>
+        </div>
       </div>
     </form>
-    <button type="button" class="btn btn-outline-dark btn-sm">
-      Reset Password
-    </button>
   </main>
 </template>
 <style scoped>
-main {
-  border-radius: 2%;
-  background-color: rgb(236, 236, 236);
-}
 .profileform {
   padding: 10px;
   width: 100%;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: 1fr;
+  grid-column-gap: 0px;
+  grid-row-gap: 0px;
+  background-color: rgb(236, 236, 236);
 }
 .inputs {
   padding: 10px;
@@ -294,9 +350,6 @@ main {
   padding: 20px;
   background-color: #008037;
 }
-.image-upload > input {
-  display: none;
-}
 
 .verifiedEmail {
   margin: 0;
@@ -307,6 +360,20 @@ main {
   border-radius: 5%;
   background-color: rgb(108, 154, 185);
   padding: 4px;
+}
+
+.displayName {
+  margin: 0;
+  font-family: "Libre Baskerville", serif;
+  font-size: small;
+  color: rgb(255, 255, 255);
+  font-weight: bolder;
+  border-radius: 5%;
+  background-color: rgb(24, 78, 21);
+  padding: 4px;
+  display: block;
+  text-align: center;
+  width: 100px;
 }
 .error-msg {
   color: rgb(117, 28, 28);
