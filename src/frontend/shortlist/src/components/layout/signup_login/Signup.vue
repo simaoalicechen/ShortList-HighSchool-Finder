@@ -11,61 +11,122 @@ export default {
         password: "",
         confirmPassword: "",
       },
-      nameAlert: "",
+      firstnameAlert: "",
+      secondnameAlert: "",
       passwordAlert: "",
+      validationresultfirst: false,
+      validationresultlast: false,
+      validationresultemail: false,
+      validationresultpwd: false,
+      validationresultconfirmpwd: false,
       validation: true,
     };
   },
   methods: {
-    validateName(value) {
-      let validNamePattern = new RegExp("^[a-zA-Z]+(?:[-'\\s][a-zA-Z]+)*$");
-      if (value.length < 2) {
-        this.nameAlert = "Minimum length is 2 for name!";
-        return false;
+    validateFirstName(value) {
+      if (this.validation) {
+        let validNamePattern = new RegExp("^[a-zA-Z]+(?:[-'\\s][a-zA-Z]+)*$");
+        if (value.length < 2) {
+          this.firstnameAlert = "Minimum length is 2 for name!";
+          this.validationresultfirst = false;
+          return false;
+        }
+        if (value.length > 10) {
+          this.firstnameAlert = "Maximum length is 10 for name!";
+          this.validationresultfirst = false;
+          return false;
+        }
+        if (!validNamePattern.test(value)) {
+          this.firstnameAlert =
+            "Letters only! In between, dashes (-) and spaces allowed!";
+          this.validationresultfirst = false;
+          return false;
+        }
+        this.validationresultfirst = true;
+        return true;
+      } else {
+        this.validationresultfirst = true;
+        return true;
       }
-      if (value.length > 10) {
-        this.nameAlert = "Maximum length is 10 for name!";
-        return false;
+    },
+    validateLastName(value) {
+      if (this.validation) {
+        let validNamePattern = new RegExp("^[a-zA-Z]+(?:[-'\\s][a-zA-Z]+)*$");
+        if (value.length < 2) {
+          this.secondnameAlert = "Minimum length is 2 for name!";
+          this.validationresultlast = false;
+          return false;
+        }
+        if (value.length > 10) {
+          this.secondnameAlert = "Maximum length is 10 for name!";
+          this.validationresultlast = false;
+          return false;
+        }
+        if (!validNamePattern.test(value)) {
+          this.secondnameAlert =
+            "Letters only! In between, dashes (-) and spaces allowed!";
+          this.validationresultlast = false;
+          return false;
+        }
+        this.validationresultlast = true;
+        return true;
+      } else {
+        this.validationresultlast = true;
+        return true;
       }
-      if (!validNamePattern.test(value)) {
-        this.nameAlert =
-          "Valid name only contain letters, dashes (-) and spaces (No starting spaces)!";
-        return false;
-      }
-      return true;
     },
     validateEmail() {
-      let emailPattern = new RegExp(
-        "^\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*(\\.\\w{2,3})+$"
-      );
-      return emailPattern.test(this.form.email);
+      if (this.validation) {
+        let emailPattern = new RegExp(
+          "^\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*(\\.\\w{2,3})+$"
+        );
+        this.validationresultemail = emailPattern.test(this.form.email);
+        return this.validationresultemail;
+      } else {
+        this.validationresultemail = true;
+        return true;
+      }
     },
     validatePassword() {
-      let passwordPattern = new RegExp(
-        "(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*\\W)"
-      );
-      if (this.form.password.length < 8) {
-        this.passwordAlert = "Minimum length is 8 for password!";
-        return false;
+      if (this.validation) {
+        let passwordPattern = new RegExp(
+          "(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*\\W)"
+        );
+        if (this.form.password.length < 8) {
+          this.passwordAlert = "Minimum length is 8 for password!";
+          this.validationresultpwd = false;
+          return false;
+        }
+        if (this.form.password.length > 15) {
+          this.passwordAlert = "Maximum length is 15 for password!";
+          this.validationresultpwd = false;
+          return false;
+        }
+        if (!passwordPattern.test(this.form.password)) {
+          this.passwordAlert =
+            "Invalid Password. At least 1 digit, 1 lower case, 1 upper case, and 1 special required.";
+          this.validationresultpwd = false;
+          return false;
+        }
+        this.validationresultpwd = true;
+        return true;
+      } else {
+        this.validationresultpwd = true;
+        return true;
       }
-      if (this.form.password.length > 15) {
-        this.passwordAlert = "Maximum length is 15 for password!";
-        return false;
-      }
-      if (!passwordPattern.test(this.form.password)) {
-        this.passwordAlert =
-          "Invalid Password. At least 1 digit, 1 lower case, 1 upper case, and 1 special required.";
-        return false;
-      }
-      return true;
     },
     validateConfirmPassword() {
-      return this.form.password == this.form.confirmPassword;
+      if (this.validation) {
+        this.validationresultconfirmpwd =
+          this.form.password == this.form.confirmPassword;
+        return this.validationresultconfirmpwd;
+      } else {
+        this.this.validationresultconfirmpwd = true;
+        return true;
+      }
     },
-    // TODO (Pooja): ID file required validation here
 
     submitSignupForm() {
-      // TRIGGER SIGNUP EVENT
       this.$emit("appAccountSignup", {
         email: this.form.email.trim(),
         firstName: this.form.firstName,
@@ -81,11 +142,11 @@ export default {
         return false;
       } else {
         return !(
-          this.validateName(this.form.firstName) &&
-          this.validateName(this.form.lastName) &&
-          this.validateEmail() &&
-          this.validatePassword() &&
-          this.validateConfirmPassword()
+          this.validationresultfirst &&
+          this.validationresultlast &&
+          this.validationresultemail &&
+          this.validationresultpwd &&
+          this.validationresultconfirmpwd
         );
       }
     },
@@ -96,113 +157,124 @@ export default {
 <template>
   <div class="logo_image_container">
     <router-link to="/" class="nav-item nav-link">
-      <img src="/logo.png" class="logo_img"
+      <img src="/logo.png" class="logo_img" alt="shortlistlogo"
     /></router-link>
   </div>
   <div class="signup_components_container">
     <div class="signup-form-container">
       <h1 class="instructions" id="big">Sign Up</h1>
-      <div class="first_name">
-        <input
-          type="text"
-          placeholder="First Name"
-          class="signupinput"
-          v-model="this.form.firstName"
-        />
-        <div class="input-errors" v-if="!validateName(this.form.firstName)">
-          <div class="error-msg" v-if="this.form.firstName.length > 0">
-            {{ this.nameAlert }}
+      <form v-on:keyup.enter="submitLoginForm(this.$route.query.redirect)">
+        <div class="first_name">
+          <input
+            type="text"
+            placeholder="First Name"
+            class="signupinput"
+            v-model="this.form.firstName"
+          />
+          <div
+            class="input-errors"
+            v-if="!validateFirstName(this.form.firstName)"
+          >
+            <div class="error-msg" v-if="this.form.firstName.length > 0">
+              {{ this.firstnameAlert }}
+            </div>
+            <div class="error-msg" v-else>&nbsp;</div>
           </div>
-          <div class="error-msg" v-else>&nbsp;</div>
-        </div>
-        <div class="input-errors" v-else>
-          <div class="error-msg">&nbsp;</div>
-        </div>
-      </div>
-      <div id="last_name">
-        <input
-          type="text"
-          placeholder="Last Name"
-          class="signupinput"
-          v-model="this.form.lastName"
-        />
-        <div class="input-errors" v-if="!validateName(this.form.lastName)">
-          <div class="error-msg" v-if="this.form.lastName.length > 0">
-            {{ this.nameAlert }}
+          <div class="input-errors" v-else>
+            <div class="error-msg">&nbsp;</div>
           </div>
-          <div class="error-msg" v-else>&nbsp;</div>
         </div>
-        <div class="input-errors" v-else>
-          <div class="error-msg">&nbsp;</div>
+        <div id="last_name">
+          <input
+            type="text"
+            placeholder="Last Name"
+            class="signupinput"
+            v-model="this.form.lastName"
+          />
+          <div
+            class="input-errors"
+            v-if="!validateLastName(this.form.lastName)"
+          >
+            <div class="error-msg" v-if="this.form.lastName.length > 0">
+              {{ this.secondnameAlert }}
+            </div>
+            <div class="error-msg" v-else>&nbsp;</div>
+          </div>
+          <div class="input-errors" v-else>
+            <div class="error-msg">&nbsp;</div>
+          </div>
         </div>
-      </div>
 
-      <div id="email_address_signup">
-        <input
-          type="email"
-          placeholder="Email"
-          class="signupinput"
-          v-model="this.form.email"
-        />
-        <div class="input-errors" v-if="!validateEmail()">
-          <div class="error-msg" v-if="this.form.email.length > 0">
-            Invalid email entry!
+        <div id="email_address_signup">
+          <input
+            type="email"
+            placeholder="Email"
+            class="signupinput"
+            v-model="this.form.email"
+          />
+          <div class="input-errors" v-if="!validateEmail()">
+            <div class="error-msg" v-if="this.form.email.length > 0">
+              Invalid email entry!
+            </div>
+            <div class="error-msg" v-else>&nbsp;</div>
           </div>
-          <div class="error-msg" v-else>&nbsp;</div>
-        </div>
-        <div class="input-errors" v-else>
-          <div class="error-msg">&nbsp;</div>
-        </div>
-      </div>
-      <div id="password_signup">
-        <input
-          type="password"
-          placeholder="Password"
-          class="signupinput"
-          v-model="this.form.password"
-        />
-        <div class="input-errors" v-if="!validatePassword()">
-          <div class="error-msg" v-if="this.form.password.length > 0">
-            {{ this.passwordAlert }}
-          </div>
-          <div class="error-msg" v-else>&nbsp;</div>
-        </div>
-        <div class="input-errors" v-else>
-          <div class="error-msg">&nbsp;</div>
-        </div>
-      </div>
-      <div>
-        <input
-          type="password"
-          autocomplete="off"
-          placeholder="Confirm Password"
-          class="signupinput"
-          v-model="this.form.confirmPassword"
-        />
-        <div class="input-errors" v-if="!validateConfirmPassword()">
-          <div class="error-msg">
-            Password and Confirm Password must be match!
+          <div class="input-errors" v-else>
+            <div class="error-msg">&nbsp;</div>
           </div>
         </div>
-        <div class="input-errors" v-else>
-          <div class="error-msg">&nbsp;</div>
+        <div id="password_signup">
+          <input
+            type="password"
+            placeholder="Password"
+            class="signupinput"
+            v-model="this.form.password"
+          />
+          <div class="input-errors" v-if="!validatePassword()">
+            <div class="error-msg" v-if="this.form.password.length > 0">
+              {{ this.passwordAlert }}
+            </div>
+            <div class="error-msg" v-else>&nbsp;</div>
+          </div>
+          <div class="input-errors" v-else>
+            <div class="error-msg">&nbsp;</div>
+          </div>
         </div>
-      </div>
-      <!-- TODO (Pooja): Birthdate field -->
-      <button
-        class="btn btn-outline-dark"
-        id="signupButtonTest"
-        @click.prevent="submitSignupForm"
-        :disabled="isSignUpDisabled"
-      >
-        Sign up
-      </button>
-      <p class="instructions" id="small">
-        Have an account already?
-        <button @click="$router.replace('/login')" class="btn btn-outline-dark">
-          Log me in!
+        <div>
+          <input
+            type="password"
+            autocomplete="off"
+            placeholder="Confirm Password"
+            class="signupinput"
+            v-model="this.form.confirmPassword"
+          />
+          <div class="input-errors" v-if="!validateConfirmPassword()">
+            <div class="error-msg">
+              Password and Confirm Password must be match!
+            </div>
+          </div>
+          <div class="input-errors" v-else>
+            <div class="error-msg">&nbsp;</div>
+          </div>
+        </div>
+        <button
+          class="btn btn-outline-dark"
+          id="signupButtonTest"
+          @click.prevent="submitSignupForm"
+          :disabled="isSignUpDisabled"
+          style="font-family: Aleo"
+        >
+          Sign up
         </button>
-      </p>
+      </form>
+      <div>
+        <button
+          @click="$router.replace('/login')"
+          class="btn btn-outline-dark"
+          style="font-family: Aleo; margin-left: 30%"
+        >
+          Already have an account?
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -250,14 +322,15 @@ input {
   margin-top: 100px;
 }
 #small.instructions {
-  font-size: 24px;
+  font-size: 14px;
   font-weight: 500;
-  font-family: "Cabin Sketch", cursive;
+  font-family: "Aleo";
 }
 #big.instructions {
   font-size: 50px;
   font-weight: 500;
   font-family: "Cabin Sketch", cursive;
+  margin-left: 30%;
 }
 .signupinput {
   width: 100%;

@@ -11,10 +11,9 @@ const router = useRouter();
 const appSessionStore = sessionStore();
 
 function markSchoolAsTrashed(payload) {
-  console.log(payload);
+  // eslint-disable-next-line no-unused-vars
   let success = (response) => {
-    console.log("Marked the schoolCard as being trashed");
-    console.log(response);
+    // console.log("Marked the schoolCard as being trashed,", response);
   };
   let failure = (err) => {
     console.log(
@@ -28,7 +27,7 @@ function markSchoolAsTrashed(payload) {
 
 function markSchoolAsAccepted(payload) {
   let success = () => {
-    console.log("Marked as accepted: ", payload.recoID);
+    // console.log("Marked as accepted: ", payload.recoID);
   };
   let failure = (err) => {
     console.log(
@@ -184,6 +183,5 @@ function appAddStudent(payload) {
   height: 100%;
   margin: 0;
   height: 100%;
-  overflow: auto;
 }
 </style>

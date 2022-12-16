@@ -30,35 +30,41 @@ export default {
 
 <template>
   <main>
-    <div>
+    <div v-if="accountMetadata != null">
       <label class="prefprofiletitle">Preferences</label>
       <form class="prefprofileform">
         <template
           v-for="val in accountMetadata.preferences.recommendationPreferences"
           :key="val"
         >
-          <label class="pref-q-name">{{ val.Question }}</label>
-          <span v-if="Number(val.Response)">
-            <input
-              type="range"
-              class="slider"
-              :value="Number(val.Response)"
-              min="1"
-              max="7"
-              disabled
-            />
-          </span>
-          <span v-else>
-            <input
-              type="text"
-              class="profilefields"
-              :placeholder="val.Response"
-              disabled
-            />
+          <span v-if="val.Question">
+            <label class="pref-q-name">{{ val.Question }}</label>
+            <span v-if="Number(val.Response)">
+              <input
+                type="range"
+                class="slider"
+                :value="Number(val.Response)"
+                min="1"
+                max="7"
+                disabled
+              />
+            </span>
+            <span v-else>
+              <input
+                type="text"
+                class="profilefields"
+                :placeholder="val.Response"
+                disabled
+              />
+            </span>
           </span>
         </template>
       </form>
-      <button @click="togglePreferenceForm" class="btn btn-outline-dark">
+      <button
+        @click="togglePreferenceForm"
+        class="btn btn-outline-dark"
+        style="margin-left: 10px"
+      >
         Update Preferences
       </button>
     </div>

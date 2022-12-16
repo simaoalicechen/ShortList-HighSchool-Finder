@@ -7,8 +7,6 @@ export default {
       isVerified: false,
       email: "",
       errorMessage: "",
-      testVerified: false,
-      testNotVerified: false,
       testPostSent: false,
     };
   },
@@ -18,10 +16,12 @@ export default {
   mounted() {
     //fetching information from url sent to the email address
     //let params = this.router.query;
-    let params = this.$route.query;
-    //somehow this line makes thing works, so param does not provide bool but string
-    this.isVerified = params.token_valid == "True";
-    this.errorMessage = params.message;
+    if (this.$route) {
+      let params = this.$route.query;
+      //somehow this line makes thing works, so param does not provide bool but string
+      this.isVerified = params.token_valid == "True";
+      this.errorMessage = params.message;
+    }
   },
   methods: {
     resendLink() {
@@ -45,12 +45,11 @@ export default {
 </script>
 <template>
   <div class="verify-container">
-    {{ $router.query }}
     <!-- Display based on verification status -->
     <!-- Either resend link or redirect to login depend on verification status-->
     <template v-if="this.isVerified">
       <form>
-        <h5 this.testVerified="true">Verified successfully</h5>
+        <h3 class="header">Verified successfully</h3>
         <a href="http://www.shortlist.nyc/login?firstTime=true" id="loginLink">
           Click here to login!
         </a>
@@ -58,8 +57,8 @@ export default {
     </template>
     <template v-else>
       <form>
-        <div class="message-container" this.testNotVerified="true">
-          {{ errorMessage }}
+        <div class="message-container">
+          <h3 class="header">{{ errorMessage }}</h3>
         </div>
         <div class="input-container" id="emailaddress">
           <input
@@ -72,7 +71,7 @@ export default {
         <div class="button-container">
           <button
             @click="this.resendLink"
-            id="resetButton"
+            id="resendButton"
             class="btn btn-outline-dark"
           >
             Resend Verification Link
@@ -85,10 +84,19 @@ export default {
 
 <style scoped>
 .verify-container {
-  width: 100vw;
-  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 50vh;
+}
+
+.header {
+  font-size: 28px;
+  font-weight: 500;
+  font-family: "Cabin Sketch", cursive;
+}
+
+.input-container {
+  padding-bottom: 10px;
 }
 </style>
